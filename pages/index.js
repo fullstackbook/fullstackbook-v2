@@ -3,13 +3,14 @@ import MoreStories from '../components/more-stories'
 import HeroPost from '../components/hero-post'
 import Intro from '../components/intro'
 import Layout from '../components/layout'
-import { getAllPosts } from '../lib/api'
+import { getAllPosts, getReadme } from '../lib/api'
 import Head from 'next/head'
 import { CMS_NAME } from '../lib/constants'
+import PostBody from '../components/post-body';
+import markdownToHtml from '../lib/markdownToHtml'
 
-export default function Index({ allPosts }) {
-  const heroPost = allPosts[0]
-  const morePosts = allPosts.slice(1)
+export default function Index({ allPosts, content }) {
+  const morePosts = allPosts
   return (
     <>
       <Layout>
@@ -18,17 +19,14 @@ export default function Index({ allPosts }) {
         </Head>
         <Container>
           <Intro />
-          {heroPost && (
-            <HeroPost
-              title={heroPost.title}
-              coverImage={heroPost.coverImage}
-              date={heroPost.date}
-              author={heroPost.author}
-              slug={heroPost.slug}
-              excerpt={heroPost.excerpt}
-            />
-          )}
-          {morePosts.length > 0 && <MoreStories posts={morePosts} />}
+          <div className="flex flex-row">
+            <div>
+              {morePosts.length > 0 && <MoreStories posts={morePosts} />}
+            </div>
+            <div>
+              <PostBody content={content} />
+            </div>
+          </div>
         </Container>
       </Layout>
     </>
@@ -45,7 +43,11 @@ export async function getStaticProps() {
     'excerpt',
   ])
 
+  const readme = getReadme()
+
+  const content = await markdownToHtml(readme.content)
+
   return {
-    props: { allPosts },
+    props: { allPosts, content },
   }
 }

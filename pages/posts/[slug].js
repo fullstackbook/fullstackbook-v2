@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useRouter } from 'next/router'
 import ErrorPage from 'next/error'
 import Container from '../../components/container'
@@ -10,12 +11,19 @@ import PostTitle from '../../components/post-title'
 import Head from 'next/head'
 import { CMS_NAME } from '../../lib/constants'
 import markdownToHtml from '../../lib/markdownToHtml'
+import MoreStories from '../../components/more-stories'
 
 export default function Post({ post, morePosts, preview }) {
   const router = useRouter()
   if (!router.isFallback && !post?.slug) {
     return <ErrorPage statusCode={404} />
   }
+
+  useEffect(() => {
+    console.log("load")
+    window.mermaid.init();
+  }, [post])
+
   return (
     <Layout preview={preview}>
       <Container>
@@ -29,15 +37,23 @@ export default function Post({ post, morePosts, preview }) {
                 <title>
                   {post.title} | Next.js Blog Example with {CMS_NAME}
                 </title>
-                <meta property="og:image" content={post.ogImage.url} />
+                <meta property="og:image" content={post.ogImage && post.ogImage.url} />
               </Head>
-              <PostHeader
-                title={post.title}
-                coverImage={post.coverImage}
-                date={post.date}
-                author={post.author}
-              />
-              <PostBody content={post.content} />
+              <div className="flex flex-col md:flex-row">
+                <div className="hidden md:block">
+                  {morePosts.length > 0 && <MoreStories posts={morePosts} />}
+                </div>
+                <div>
+                  <PostHeader
+                    title={post.title}
+                    coverImage={post.coverImage}
+                    date={post.date}
+                    author={post.author}
+                    excerpt={post.excerpt}
+                    />
+                  <PostBody content={post.content} />
+                </div>
+              </div>
             </article>
           </>
         )}
@@ -55,8 +71,15 @@ export async function getStaticProps({ params }) {
     'content',
     'ogImage',
     'coverImage',
+    'excerpt',
+    'links'
   ])
   const content = await markdownToHtml(post.content || '')
+
+  const allPosts = getAllPosts([
+    'title',
+    'slug',
+  ])
 
   return {
     props: {
@@ -64,6 +87,7 @@ export async function getStaticProps({ params }) {
         ...post,
         content,
       },
+      morePosts: allPosts
     },
   }
 }
